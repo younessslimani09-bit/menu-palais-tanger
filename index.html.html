@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menu digital</title>
+<style>
+:root{--blue:#1f4e8c;--gold:#c9a24d;--bg:#fbf7ef;--ink:#1f2a44;--muted:#5a6579;--card:#ffffff;--line:#e8e1d2}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:96px}
+header{background:var(--blue);color:#fff;text-align:center;padding:26px 16px 20px;border-bottom:4px solid var(--gold)}
+header h1{font-family:Georgia,'Times New Roman',serif;font-size:26px;letter-spacing:1px}
+header p{opacity:.9;font-size:14px;margin-top:6px;font-style:italic}
+.lang{display:flex;justify-content:center;gap:8px;margin-top:14px}
+.lang button{background:transparent;border:1px solid rgba(255,255,255,.6);color:#fff;border-radius:16px;padding:5px 14px;font-size:13px;cursor:pointer}
+.lang button.on{background:var(--gold);border-color:var(--gold);color:#1f2a44;font-weight:700}
+.links{display:flex;gap:10px;justify-content:center;padding:14px 12px 4px;flex-wrap:wrap}
+.links a{background:var(--card);border:1px solid var(--line);color:var(--blue);text-decoration:none;font-size:14px;font-weight:600;padding:9px 14px;border-radius:20px}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);display:flex;gap:8px;overflow-x:auto;padding:10px 12px;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:20px;padding:8px 14px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+nav button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+main{max-width:640px;margin:0 auto;padding:6px 14px}
+h2{font-family:Georgia,serif;color:var(--blue);font-size:22px;margin:22px 2px 10px;text-transform:uppercase;letter-spacing:1px}
+.item{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;align-items:center}
+.pic{flex:0 0 72px;height:72px;border-radius:12px;background:linear-gradient(135deg,#f3ead6,#e5d4a8);display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden}
+.pic img{width:100%;height:100%;object-fit:cover}
+.txt{flex:1;min-width:0}
+.name{font-weight:700;font-size:16px}
+.desc{color:var(--muted);font-size:13px;margin-top:3px;line-height:1.35}
+.price{color:var(--blue);font-weight:800;font-size:15px;margin-top:6px}
+.act{flex:0 0 auto}
+.btn{border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:700;font-size:14px;padding:9px 12px;cursor:pointer}
+.btn.wa{background:#1fa855}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:32px;height:32px;border-radius:50%;border:0;background:var(--blue);color:#fff;font-size:18px;cursor:pointer}
+.qty span{min-width:18px;text-align:center;font-weight:700}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 14px;display:none;box-shadow:0 -4px 14px rgba(0,0,0,.08)}
+.bar.show{display:block}
+.bar .btn{width:100%;max-width:640px;display:block;margin:0 auto;background:#1fa855;padding:14px;font-size:16px;border-radius:12px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:18px 14px}
+[dir=rtl] .txt{text-align:right}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="hName"></h1>
+  <p id="hTag"></p>
+  <div class="lang">
+    <button data-l="fr">FR</button><button data-l="en">EN</button><button data-l="ar">AR</button>
+  </div>
+</header>
+<div class="links" id="links"></div>
+<nav id="nav"></nav>
+<main id="main"></main>
+<div class="bar" id="bar"><button class="btn" id="send"></button></div>
+<footer id="foot"></footer>
+
+<script>
+/* =========================================================
+   CONFIGURATION — à modifier pour chaque client
+   ========================================================= */
+const CONFIG = {
+  name: "Votre Maison d'Hôte",
+  tagline: { fr: "Une pause gourmande au cœur de Tanger", en: "A delicious break in the heart of Tangier", ar: "استراحة شهية في قلب طنجة" },
+  whatsapp: "212624580367",            // numéro sans + ni espaces
+  mapsUrl: "https://maps.google.com/", // lien Google Maps du client
+  reviewUrl: "https://search.google.com/local/writereview", // remplacer par le lien d'avis du client
+  currency: "MAD",
+  defaultLang: "fr"
+};
+
+/* Chaque produit : p = prix (nombre) ou null (sur demande), img = URL de photo (optionnel), e = emoji de secours.
+   type "order" = ajout au panier ; type "request" = bouton WhatsApp direct. */
+const CATS = [
+  { id: "bf", t: { fr: "Petit-déjeuner marocain", en: "Moroccan Breakfast", ar: "الفطور المغربي" }, items: [
+    { n: { fr: "Petit-déjeuner marocain complet", en: "Full Moroccan breakfast", ar: "فطور مغربي كامل" }, d: { fr: "Harcha, msemmen, baghrir, amlou, miel, fromage, olives, confiture, beurre, œuf, jus d'orange, thé ou café.", en: "Harcha, msemmen, baghrir, amlou, honey, cheese, olives, jam, butter, egg, orange juice, tea or coffee.", ar: "حرشة، مسمن، بغرير، أملو، عسل، جبن، زيتون، مربى، زبدة، بيض، عصير برتقال، شاي أو قهوة." }, p: 60, e: "🍳" },
+    { n: { fr: "Harcha", en: "Harcha", ar: "حرشة" }, p: 15, e: "🥞" },
+    { n: { fr: "Msemmen", en: "Msemmen", ar: "مسمن" }, p: 15, e: "🫓" },
+    { n: { fr: "Amlou & miel", en: "Amlou & honey", ar: "أملو وعسل" }, d: { fr: "Amandes, huile d'argan, miel.", en: "Almonds, argan oil, honey.", ar: "لوز، زيت أركان، عسل." }, p: 25, e: "🍯" },
+    { n: { fr: "Fromages", en: "Cheeses", ar: "أجبان" }, p: 20, e: "🧀" }
+  ]},
+  { id: "meals", t: { fr: "Déjeuners & dîners", en: "Lunch & Dinner", ar: "الغداء والعشاء" }, items: [
+    { n: { fr: "Tajine d'agneau aux pruneaux", en: "Lamb tajine with prunes", ar: "طاجين اللحم بالبرقوق" }, d: { fr: "Agneau, pruneaux, amandes.", en: "Lamb, prunes, almonds.", ar: "لحم الغنم، برقوق، لوز." }, p: 120, e: "🍲" },
+    { n: { fr: "Tajine de poulet au citron", en: "Chicken tajine with lemon", ar: "طاجين الدجاج بالليمون" }, d: { fr: "Poulet, citron confit, olives.", en: "Chicken, preserved lemon, olives.", ar: "دجاج، ليمون مصبر، زيتون." }, p: 100, e: "🍗" },
+    { n: { fr: "Couscous royal (vendredi)", en: "Royal couscous (Friday)", ar: "كسكس ملكي (الجمعة)" }, d: { fr: "Couscous, brochette, légumes, salades.", en: "Couscous, skewer, vegetables, salads.", ar: "كسكس، قطع مشوية، خضر، سلطات." }, p: 120, e: "🍛" },
+    { n: { fr: "Poisson du jour de Tanger", en: "Tangier fish of the day", ar: "سمك اليوم من طنجة" }, p: 120, e: "🐟" },
+    { n: { fr: "Salades marocaines assorties", en: "Assorted Moroccan salads", ar: "سلطات مغربية متنوعة" }, p: 40, e: "🥗" }
+  ]},
+  { id: "drinks", t: { fr: "Boissons & snacks", en: "Drinks & Snacks", ar: "المشروبات والوجبات الخفيفة" }, items: [
+    { n: { fr: "Thé à la menthe traditionnel", en: "Traditional mint tea", ar: "الشاي بالنعناع" }, p: 12, e: "🍵" },
+    { n: { fr: "Café", en: "Coffee", ar: "قهوة" }, p: 12, e: "☕" },
+    { n: { fr: "Jus d'orange pressé", en: "Fresh orange juice", ar: "عصير برتقال طازج" }, p: 20, e: "🍊" },
+    { n: { fr: "Pâtisseries marocaines (Kaab el ghzal)", en: "Moroccan pastries (Kaab el ghzal)", ar: "حلويات مغربية (كعب غزال)" }, p: 20, e: "🥮" }
+  ]},
+  { id: "services", t: { fr: "Services & activités", en: "Services & Activities", ar: "الخدمات والأنشطة" }, items: [
+    { type: "request", n: { fr: "Room service", en: "Room service", ar: "خدمة الغرف" }, d: { fr: "Commande en chambre (+20 MAD).", en: "Order to your room (+20 MAD).", ar: "الطلب إلى الغرفة (+20 درهم)." }, e: "🛎️", r: { fr: "Je souhaite le room service.", en: "I would like room service.", ar: "أرغب في خدمة الغرف." } },
+    { type: "request", n: { fr: "Hammam & massage", en: "Hammam & massage", ar: "حمام ومساج" }, d: { fr: "Sur réservation.", en: "By reservation.", ar: "بالحجز المسبق." }, e: "🧖", r: { fr: "Je souhaite réserver un hammam / massage.", en: "I would like to book a hammam / massage.", ar: "أرغب في حجز حمام / مساج." } },
+    { type: "request", n: { fr: "Visites guidées", en: "Guided tours", ar: "جولات سياحية" }, d: { fr: "Médina, Grottes d'Hercule, Cap Spartel. Sur demande.", en: "Medina, Caves of Hercules, Cape Spartel. On request.", ar: "المدينة العتيقة، مغارات هرقل، رأس سبارتيل. عند الطلب." }, e: "🧭", r: { fr: "Je souhaite organiser une visite guidée.", en: "I would like to organize a guided tour.", ar: "أرغب في تنظيم جولة سياحية." } }
+  ]}
+];
+
+const UI = {
+  add: { fr: "Ajouter", en: "Add", ar: "إضافة" },
+  req: { fr: "Demander", en: "Request", ar: "طلب" },
+  send: { fr: "Envoyer la commande sur WhatsApp", en: "Send order on WhatsApp", ar: "إرسال الطلب عبر واتساب" },
+  maps: { fr: "📍 Itinéraire", en: "📍 Directions", ar: "📍 الموقع" },
+  review: { fr: "⭐ Laisser un avis", en: "⭐ Leave a review", ar: "⭐ اترك تقييما" },
+  wa: { fr: "💬 WhatsApp", en: "💬 WhatsApp", ar: "💬 واتساب" },
+  hello: { fr: "Bonjour, je souhaite commander :", en: "Hello, I would like to order:", ar: "مرحبا، أرغب في طلب:" },
+  total: { fr: "Total", en: "Total", ar: "المجموع" },
+  room: { fr: "Chambre / Nom :", en: "Room / Name:", ar: "الغرفة / الاسم:" },
+  ask: { fr: "Bonjour,", en: "Hello,", ar: "مرحبا،" },
+  onreq: { fr: "Sur demande", en: "On request", ar: "عند الطلب" },
+  foot: { fr: "Prix en dirhams (MAD), toutes taxes comprises.", en: "Prices in MAD, taxes included.", ar: "الأسعار بالدرهم المغربي شاملة الضرائب." }
+};
+
+let lang = CONFIG.defaultLang;
+const cart = {}; // key "c-i" -> qty
+const $ = s => document.querySelector(s);
+const wa = txt => "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(txt);
+
+function render(){
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  document.title = CONFIG.name;
+  $("#hName").textContent = CONFIG.name;
+  $("#hTag").textContent = CONFIG.tagline[lang];
+  document.querySelectorAll(".lang button").forEach(b => b.classList.toggle("on", b.dataset.l === lang));
+  $("#links").innerHTML =
+    `<a href="${CONFIG.mapsUrl}" target="_blank" rel="noopener">${UI.maps[lang]}</a>` +
+    `<a href="${CONFIG.reviewUrl}" target="_blank" rel="noopener">${UI.review[lang]}</a>` +
+    `<a href="${wa(UI.ask[lang])}" target="_blank" rel="noopener">${UI.wa[lang]}</a>`;
+  $("#nav").innerHTML = CATS.map(c => `<button data-id="${c.id}">${c.t[lang]}</button>`).join("");
+  $("#main").innerHTML = CATS.map((c, ci) => `<section id="s-${c.id}"><h2>${c.t[lang]}</h2>` +
+    c.items.map((it, ii) => {
+      const k = ci + "-" + ii;
+      const pic = it.img ? `<img src="${it.img}" alt="">` : (it.e || "🍽️");
+      const price = it.p != null ? `<div class="price">${it.p} ${CONFIG.currency}</div>` : "";
+      let act;
+      if (it.type === "request") act = `<button class="btn wa" data-req="${k}">${UI.req[lang]}</button>`;
+      else if (cart[k]) act = `<div class="qty"><button data-m="${k}">−</button><span>${cart[k]}</span><button data-p="${k}">+</button></div>`;
+      else act = `<button class="btn" data-p="${k}">${UI.add[lang]}</button>`;
+      return `<div class="item"><div class="pic">${pic}</div><div class="txt"><div class="name">${it.n[lang]}</div>` +
+        (it.d ? `<div class="desc">${it.d[lang]}</div>` : "") + price + `</div><div class="act">${act}</div></div>`;
+    }).join("") + `</section>`).join("");
+  $("#foot").textContent = UI.foot[lang];
+  updateBar();
+}
+
+function updateBar(){
+  const keys = Object.keys(cart).filter(k => cart[k] > 0);
+  const bar = $("#bar");
+  if (!keys.length){ bar.classList.remove("show"); return; }
+  let total = 0, count = 0;
+  keys.forEach(k => { const [c, i] = k.split("-"); total += CATS[c].items[i].p * cart[k]; count += cart[k]; });
+  $("#send").textContent = `${UI.send[lang]} (${count}) · ${total} ${CONFIG.currency}`;
+  bar.classList.add("show");
+}
+
+function buildOrder(){
+  let total = 0;
+  const lines = Object.keys(cart).filter(k => cart[k] > 0).map(k => {
+    const [c, i] = k.split("-"); const it = CATS[c].items[i];
+    total += it.p * cart[k];
+    return `• ${cart[k]} × ${it.n[lang]} — ${it.p * cart[k]} ${CONFIG.currency}`;
+  });
+  return `${UI.hello[lang]}\n${lines.join("\n")}\n${UI.total[lang]}: ${total} ${CONFIG.currency}\n${UI.room[lang]} `;
+}
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.l){ lang = t.dataset.l; render(); return; }
+  if (t.dataset.id){ document.getElementById("s-" + t.dataset.id).scrollIntoView({ behavior: "smooth", block: "start" }); document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b === t)); return; }
+  if (t.dataset.p){ cart[t.dataset.p] = (cart[t.dataset.p] || 0) + 1; render(); return; }
+  if (t.dataset.m){ cart[t.dataset.m] = Math.max(0, (cart[t.dataset.m] || 0) - 1); render(); return; }
+  if (t.dataset.req){ const [c, i] = t.dataset.req.split("-"); window.open(wa(CATS[c].items[i].r[lang]), "_blank"); return; }
+  if (t.id === "send"){ window.open(wa(buildOrder()), "_blank"); }
+});
+
+const saved = (() => { try { return localStorage.getItem("menu-lang"); } catch (e) { return null; } })();
+if (saved && UI.foot[saved]) lang = saved;
+document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => { try { localStorage.setItem("menu-lang", b.dataset.l); } catch (e) {} }));
+render();
+</script>
+</body>
+</html>
