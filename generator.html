@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Générateur de lien démo</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:#fff8f0;color:#2b1d14;padding:18px 14px 40px}
+.w{max-width:520px;margin:0 auto}
+h1{font-size:22px;color:#8a3b12;margin-bottom:4px}
+p.s{color:#6f5f53;font-size:14px;margin-bottom:18px}
+label{display:block;font-weight:700;font-size:14px;margin:14px 0 6px}
+input{width:100%;border:1px solid #e3d3bf;border-radius:10px;padding:13px;font-size:16px;font-family:inherit;background:#fff}
+small{display:block;color:#6f5f53;font-size:12px;margin-top:4px}
+.out{margin-top:20px;background:#fff;border:1px solid #e3d3bf;border-radius:12px;padding:12px;word-break:break-all;font-size:14px;line-height:1.4;min-height:48px}
+.row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+button,a.b{flex:1;min-width:120px;text-align:center;text-decoration:none;border:0;border-radius:10px;background:#8a3b12;color:#fff;font-weight:700;font-size:15px;padding:13px;cursor:pointer}
+a.b.g{background:#1fa855}
+a.b.o{background:#2b1d14}
+.ok{color:#1b7a3d;font-size:13px;font-weight:700;margin-top:8px;min-height:18px}
+.warn{color:#b3261e;font-size:13px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="w">
+  <h1>Générateur de lien démo</h1>
+  <p class="s">Écris le nom et le numéro, puis copie le lien.</p>
+
+  <label for="name">Nom du commerce</label>
+  <input id="name" placeholder="Crousty Touch" autocomplete="off">
+
+  <label for="wa">Numéro WhatsApp</label>
+  <input id="wa" placeholder="0626265362" inputmode="tel" autocomplete="off">
+  <small>Tu peux écrire 06..., 07... ou 212...</small>
+
+  <label for="base">Adresse du menu</label>
+  <input id="base" placeholder="https://xxx.github.io/menu-cafe-demo/" autocomplete="off">
+  <small>Remplie automatiquement si cette page est dans le même dossier que le menu.</small>
+
+  <div class="out" id="out"></div>
+  <div class="warn" id="warn"></div>
+  <div class="row">
+    <button id="copy">📋 Copier</button>
+    <a class="b o" id="open" target="_blank" rel="noopener">👁 Tester</a>
+    <a class="b g" id="share" target="_blank" rel="noopener">💬 Envoyer</a>
+  </div>
+  <div class="ok" id="ok"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const store = {
+  get(k){ try { return localStorage.getItem(k) || ""; } catch(e){ return ""; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+};
+
+// adresse du menu : mémorisée, sinon déduite du dossier actuel
+let guess = "";
+if (location.protocol.startsWith("http")) guess = location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "");
+$("#base").value = store.get("gen-base") || guess;
+
+function normPhone(v){
+  let d = (v || "").replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2);
+  else if (d.startsWith("0")) d = "212" + d.slice(1);
+  return d;
+}
+
+function build(){
+  const name = $("#name").value.trim();
+  const phone = normPhone($("#wa").value);
+  let base = $("#base").value.trim();
+  const warn = [];
+  if (base && !/^https?:\/\//i.test(base)) warn.push("L'adresse doit commencer par https://");
+  if (base && !base.endsWith("/")) base += "/";
+  if ($("#wa").value && !/^212[5-7]\d{8}$/.test(phone)) warn.push("Numéro marocain inhabituel : vérifie-le (ex. 0626265362).");
+  $("#warn").textContent = warn.join(" ");
+
+  if (!base || !name || !phone){
+    $("#out").textContent = "Remplis les 3 champs pour voir le lien.";
+    ["#open","#share"].forEach(s => $(s).removeAttribute("href"));
+    return "";
+  }
+  const link = base + "?name=" + encodeURIComponent(name) + "&wa=" + phone;
+  $("#out").textContent = link;
+  $("#open").href = link;
+  $("#share").href = "https://wa.me/?text=" + encodeURIComponent(link);
+  return link;
+}
+
+["name","wa","base"].forEach(id => $("#" + id).addEventListener("input", () => { if (id === "base") store.set("gen-base", $("#base").value.trim()); $("#ok").textContent = ""; build(); }));
+
+$("#copy").addEventListener("click", async () => {
+  const link = build();
+  if (!link){ $("#ok").textContent = ""; return; }
+  try { await navigator.clipboard.writeText(link); }
+  catch(e){
+    const t = document.createElement("textarea"); t.value = link; document.body.appendChild(t); t.select();
+    try { document.execCommand("copy"); } catch(_){}
+    t.remove();
+  }
+  $("#ok").textContent = "✓ Lien copié";
+});
+
+build();
+</script>
+</body>
+</html>
