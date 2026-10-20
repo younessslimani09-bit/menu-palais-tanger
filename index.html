@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menu digital</title>
+<style>
+:root{--main:#137ab5;--gold:#bfe6fa;--bg:#f2f9fd;--ink:#0f2a3a;--muted:#5a7384;--card:#fff;--line:#d8eaf5}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:190px}
+header{background:linear-gradient(135deg,#137ab5,#5bc0eb);color:#fff;text-align:center;padding:30px 16px 20px;border-bottom:4px solid #bfe6fa}
+header.cv{padding:70px 16px 24px;background-size:cover;background-position:center}
+header h1,header p{text-shadow:0 2px 10px rgba(0,0,0,.45)}
+header h1{font-family:Georgia,'Times New Roman',serif;font-size:28px;letter-spacing:1px}
+header p{opacity:.95;font-size:14px;margin-top:6px;font-style:italic}
+.lang{display:flex;justify-content:center;gap:8px;margin-top:14px}
+.lang button{background:transparent;border:1px solid rgba(255,255,255,.7);color:#fff;border-radius:16px;padding:5px 14px;font-size:13px;cursor:pointer}
+.lang button.on{background:#fff;border-color:#fff;color:#137ab5;font-weight:700}
+.links{display:flex;gap:10px;justify-content:center;padding:14px 12px 4px;flex-wrap:wrap}
+.links a{background:var(--card);border:1px solid var(--line);color:var(--main);text-decoration:none;font-size:14px;font-weight:600;padding:9px 14px;border-radius:20px}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);display:flex;gap:8px;overflow-x:auto;padding:10px 12px;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:20px;padding:8px 14px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+nav button.on{background:var(--main);border-color:var(--main);color:#fff}
+main{max-width:640px;margin:0 auto;padding:6px 14px}
+h2{font-family:Georgia,serif;color:var(--main);font-size:22px;margin:22px 2px 10px;text-transform:uppercase;letter-spacing:1px;scroll-margin-top:70px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:16px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.pic{width:100%;aspect-ratio:4/5;max-height:460px;background:linear-gradient(135deg,#e1f2fb,#bfe0f3);display:flex;align-items:center;justify-content:center;font-size:90px;overflow:hidden}
+.body{display:flex;gap:12px;align-items:flex-start;padding:14px}
+.pic img{width:100%;height:100%;object-fit:cover}
+.txt{flex:1;min-width:0}
+.name{font-weight:700;font-size:16px}
+.desc{color:var(--muted);font-size:13px;margin-top:3px;line-height:1.35}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.chip{background:#e1f2fb;color:#0f4f75;border-radius:12px;padding:3px 8px;font-size:12px;white-space:nowrap}
+.price{color:var(--main);font-weight:800;font-size:15px;margin-top:8px}
+.act{flex:0 0 auto}
+.btn{border:0;border-radius:10px;background:var(--main);color:#fff;font-weight:700;font-size:14px;padding:9px 12px;cursor:pointer}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:32px;height:32px;border-radius:50%;border:0;background:var(--main);color:#fff;font-size:18px;cursor:pointer}
+.qty span{min-width:18px;text-align:center;font-weight:700}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 14px;display:none;box-shadow:0 -4px 14px rgba(0,0,0,.1)}
+.bar.show{display:block}
+.bar .in{max-width:640px;margin:0 auto}
+.opts{display:flex;gap:6px;margin-bottom:8px}
+.opts button{flex:1;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 4px;font-size:13px;font-weight:600;cursor:pointer}
+.opts button.on{background:var(--gold);border-color:#5bc0eb;color:#0f2a3a}
+.bar input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;margin-bottom:8px;font-family:inherit}
+.bar .send{width:100%;display:block;background:#1fa855;padding:14px;font-size:16px;border-radius:12px;color:#fff;border:0;font-weight:700;cursor:pointer}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:18px 14px}
+[dir=rtl] .txt{text-align:right}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="hName"></h1>
+  <p id="hTag"></p>
+  <div class="lang"><button data-l="fr">FR</button><button data-l="en">EN</button><button data-l="ar">AR</button></div>
+</header>
+<div class="links" id="links"></div>
+<nav id="nav"></nav>
+<main id="main"></main>
+<div class="bar" id="bar"><div class="in"><div class="opts" id="opts"></div><input id="info" type="text"><button class="send" id="send"></button></div></div>
+<footer id="foot"></footer>
+
+<script>
+/* CONFIGURATION — valeurs par défaut (le lien du générateur les remplace) */
+const CONFIG = {
+  name: "Riad Demo",
+  tagline: { fr: "Hôtel & Riad — Petit-déjeuner, restauration & services", en: "Hotel & Riad — Breakfast, dining & services", ar: "فندق ورياض — الفطور، المطعم والخدمات" },
+  whatsapp: "212600000000",
+  mapsUrl: "https://maps.google.com/",
+  reviewUrl: "https://search.google.com/local/writereview",
+  currency: "MAD",
+  defaultLang: "fr",
+  cover: "cover-1.jpg",   // optionnel : si l'image n'existe pas, le dégradé s'affiche
+  demo: true
+};
+
+/* LIEN INTELLIGENT (généré par generator.html) : ?name=...&wa=...&maps=...&review=...&demo=0 */
+(function(){
+  const Q = new URLSearchParams(location.search);
+  const name = Q.get("name"); if (name) CONFIG.name = name.slice(0, 60);
+  let wa = (Q.get("wa") || "").replace(/\D/g, "");
+  if (wa) { if (wa.startsWith("00")) wa = wa.slice(2); else if (wa.startsWith("0")) wa = "212" + wa.slice(1); CONFIG.whatsapp = wa; }
+  const ok = u => /^https?:\/\//i.test(u || "");
+  if (ok(Q.get("maps"))) CONFIG.mapsUrl = Q.get("maps");
+  if (ok(Q.get("review"))) CONFIG.reviewUrl = Q.get("review");
+  if (Q.get("demo") === "0") CONFIG.demo = false;
+})();
+
+/* n = nom, d = description, l = composants du plat [emoji, fr, en, ar], p = prix, e = emoji, img = photo (optionnelle) */
+const CATS = [
+  { id: "bf", t: { fr: "Petit-déjeuner", en: "Breakfast", ar: "الفطور" }, items: [
+    { n: { fr: "Petit-déjeuner marocain", en: "Moroccan breakfast", ar: "فطور مغربي" },
+      d: { fr: "Servi de 7h à 10h30, complet et à volonté en thé.", en: "Served 7:00–10:30, complete with tea refills.", ar: "من 7:00 إلى 10:30، كامل مع الأتاي." },
+      l: [["🥞","Msemen","Msemen","مسمن"],["🫓","Harcha","Harcha","حرشة"],["🥞","Baghrir","Baghrir","بغرير"],["🧀","Fromage frais","Fresh cheese","جبن طازج"],["🫒","Olives","Olives","زيتون"],["🧈","Beurre","Butter","زبدة"],["🍓","Confiture","Jam","مربى"],["🍯","Miel","Honey","عسل"],["🌰","Amlou","Amlou","أملو"],["🥚","Œufs","Eggs","بيض"],["🍊","Jus d'orange","Orange juice","عصير برتقال"],["🍵","Thé à la menthe","Mint tea","أتاي بالنعناع"]],
+      img: "petit-dej-marocain.jpg", p: 70, e: "🍳" },
+    { n: { fr: "Petit-déjeuner continental", en: "Continental breakfast", ar: "فطور كونتيننتال" },
+      d: { fr: "Servi de 7h à 10h30.", en: "Served 7:00–10:30.", ar: "من 7:00 إلى 10:30." },
+      l: [["🥐","Croissant","Croissant","كرواسون"],["🍫","Pain au chocolat","Pain au chocolat","بان أو شوكولا"],["🥖","Baguette","Baguette","باغيت"],["🧀","Fromage","Cheese","جبن"],["🧈","Beurre","Butter","زبدة"],["🍓","Confiture","Jam","مربى"],["🥛","Yaourt","Yogurt","زبادي"],["🍎","Fruits frais","Fresh fruit","فواكه طازجة"],["🍊","Jus d'orange","Orange juice","عصير برتقال"],["☕","Café","Coffee","قهوة"]],
+      img: "petit-dej-continental.jpg", p: 80, e: "🥐" }
+  ]},
+  { id: "lunch", t: { fr: "Déjeuner", en: "Lunch", ar: "الغداء" }, items: [
+    { n: { fr: "Tajine poulet citron & olives", en: "Chicken tagine with lemon & olives", ar: "طاجين الدجاج بالليمون والزيتون" },
+      d: { fr: "Poulet fermier, citron confit, olives, pain maison.", en: "Free-range chicken, preserved lemon, olives, homemade bread.", ar: "دجاج بلدي، ليمون مخلل، زيتون، خبز البيت." },
+      img: "tajine.jpg", p: 95, e: "🍲" },
+    { n: { fr: "Couscous aux sept légumes", en: "Seven-vegetable couscous", ar: "كسكس بسبع خضر" },
+      d: { fr: "Semoule, légumes de saison, viande d'agneau.", en: "Semolina, seasonal vegetables, lamb.", ar: "سميد، خضر الموسم، لحم الغنم." },
+      img: "couscous.jpg", p: 110, e: "🥘" }
+  ]},
+  { id: "drinks", t: { fr: "Boissons", en: "Drinks", ar: "المشروبات" }, items: [
+    { n: { fr: "Thé à la menthe (théière)", en: "Mint tea (teapot)", ar: "أتاي بالنعناع (براد)" }, img: "the.jpg", p: 20, e: "🍵" },
+    { n: { fr: "Jus d'orange pressé", en: "Fresh orange juice", ar: "عصير برتقال طازج" }, img: "orange.jpg", p: 25, e: "🍊" }
+  ]},
+  { id: "serv", t: { fr: "Services", en: "Services", ar: "الخدمات" }, items: [
+    { n: { fr: "Transfert aéroport", en: "Airport transfer", ar: "النقل من/إلى المطار" },
+      d: { fr: "Voiture avec chauffeur, réservation 24h à l'avance.", en: "Private car with driver, book 24h ahead.", ar: "سيارة مع سائق، الحجز قبل 24 ساعة." },
+      img: "transfert.jpg", p: 250, e: "🚗" },
+    { n: { fr: "Blanchisserie", en: "Laundry", ar: "الغسيل" },
+      d: { fr: "Lavage et repassage, rendu sous 24h.", en: "Wash and iron, returned within 24h.", ar: "غسيل وكي، التسليم خلال 24 ساعة." },
+      img: "laundry.jpg", p: 60, e: "👕" }
+  ]}
+];
+
+const UI = {
+  add: { fr: "Ajouter", en: "Add", ar: "إضافة" },
+  send: { fr: "Envoyer la commande sur WhatsApp", en: "Send order on WhatsApp", ar: "إرسال الطلب عبر واتساب" },
+  maps: { fr: "📍 Itinéraire", en: "📍 Directions", ar: "📍 الموقع" },
+  review: { fr: "⭐ Laisser un avis", en: "⭐ Leave a review", ar: "⭐ اترك تقييما" },
+  wa: { fr: "💬 WhatsApp", en: "💬 WhatsApp", ar: "💬 واتساب" },
+  hello: { fr: "Bonjour, je souhaite commander :", en: "Hello, I would like to order:", ar: "مرحبا، أرغب في طلب:" },
+  total: { fr: "Total", en: "Total", ar: "المجموع" },
+  ask: { fr: "Bonjour,", en: "Hello,", ar: "مرحبا،" },
+  foot: { fr: "Prix en dirhams (MAD), toutes taxes comprises.", en: "Prices in MAD, taxes included.", ar: "الأسعار بالدرهم المغربي شاملة الضرائب." },
+  demo: { fr: "Modèle de démonstration", en: "Demo template", ar: "نموذج تجريبي" },
+  types: {
+    room: { fr: "En chambre", en: "In room", ar: "بالغرفة" },
+    dine: { fr: "Au restaurant", en: "Restaurant", ar: "في المطعم" },
+    take: { fr: "À emporter", en: "Takeaway", ar: "للأخذ" }
+  },
+  ph: {
+    room: { fr: "Numéro de chambre", en: "Room number", ar: "رقم الغرفة" },
+    dine: { fr: "Numéro de table", en: "Table number", ar: "رقم الطاولة" },
+    take: { fr: "Votre nom", en: "Your name", ar: "اسمك" }
+  }
+};
+
+let lang = CONFIG.defaultLang;
+let otype = "room";
+let info = "";
+const cart = {};
+const $ = s => document.querySelector(s);
+const wa = txt => "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(txt);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function render(){
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  document.title = CONFIG.name;
+  $("#hName").textContent = CONFIG.name;
+  $("#hTag").textContent = CONFIG.tagline[lang];
+  document.querySelectorAll(".lang button").forEach(b => b.classList.toggle("on", b.dataset.l === lang));
+  $("#links").innerHTML =
+    `<a href="${CONFIG.mapsUrl}" target="_blank" rel="noopener">${UI.maps[lang]}</a>` +
+    `<a href="${CONFIG.reviewUrl}" target="_blank" rel="noopener">${UI.review[lang]}</a>` +
+    `<a href="${wa(UI.ask[lang])}" target="_blank" rel="noopener">${UI.wa[lang]}</a>`;
+  $("#nav").innerHTML = CATS.map(c => `<button data-id="${c.id}">${c.t[lang]}</button>`).join("");
+  $("#main").innerHTML = CATS.map((c, ci) => `<section id="s-${c.id}"><h2>${c.t[lang]}</h2>` +
+    c.items.map((it, ii) => {
+      const k = ci + "-" + ii;
+      const pic = it.img ? `<img src="${it.img}" alt="" loading="lazy" onerror="this.replaceWith(document.createTextNode('${it.e || "🍽️"}'))">` : (it.e || "🍽️");
+      const chips = it.l ? `<div class="chips">${it.l.map(x => `<span class="chip">${x[0]} ${esc(x[lang === "fr" ? 1 : lang === "en" ? 2 : 3])}</span>`).join("")}</div>` : "";
+      const act = cart[k]
+        ? `<div class="qty"><button data-m="${k}">−</button><span>${cart[k]}</span><button data-p="${k}">+</button></div>`
+        : `<button class="btn" data-p="${k}">${UI.add[lang]}</button>`;
+      return `<div class="item"><div class="pic">${pic}</div><div class="body"><div class="txt"><div class="name">${it.n[lang]}</div>` +
+        (it.d ? `<div class="desc">${it.d[lang]}</div>` : "") + chips +
+        `<div class="price">${it.p} ${CONFIG.currency}</div></div><div class="act">${act}</div></div></div>`;
+    }).join("") + `</section>`).join("");
+  $("#foot").textContent = UI.foot[lang] + (CONFIG.demo ? "  •  " + UI.demo[lang] : "");
+  $("#opts").innerHTML = Object.keys(UI.types).map(t => `<button data-o="${t}" class="${t === otype ? "on" : ""}">${UI.types[t][lang]}</button>`).join("");
+  $("#info").placeholder = UI.ph[otype][lang];
+  $("#info").value = info;
+  updateBar();
+}
+
+function applyCover(){
+  if (!CONFIG.cover) return;
+  const im = new Image();
+  im.onload = () => { const hd = document.querySelector("header"); hd.classList.add("cv"); hd.style.backgroundImage = `linear-gradient(rgba(15,42,58,.45),rgba(15,42,58,.45)),url("${CONFIG.cover}")`; };
+  im.src = CONFIG.cover;
+}
+
+function updateBar(){
+  const keys = Object.keys(cart).filter(k => cart[k] > 0);
+  const bar = $("#bar");
+  if (!keys.length){ bar.classList.remove("show"); return; }
+  let total = 0, count = 0;
+  keys.forEach(k => { const [c, i] = k.split("-"); total += CATS[c].items[i].p * cart[k]; count += cart[k]; });
+  $("#send").textContent = `${UI.send[lang]} (${count}) · ${total} ${CONFIG.currency}`;
+  bar.classList.add("show");
+}
+
+function buildOrder(){
+  let total = 0;
+  const lines = Object.keys(cart).filter(k => cart[k] > 0).map(k => {
+    const [c, i] = k.split("-"); const it = CATS[c].items[i];
+    total += it.p * cart[k];
+    return `• ${cart[k]} × ${it.n[lang]} — ${it.p * cart[k]} ${CONFIG.currency}`;
+  });
+  return `${CONFIG.name}\n${UI.hello[lang]}\n${lines.join("\n")}\n${UI.total[lang]}: ${total} ${CONFIG.currency}\n` +
+         `${UI.types[otype][lang]} — ${UI.ph[otype][lang]}: ${info}`;
+}
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.l){ lang = t.dataset.l; try { localStorage.setItem("menu-lang", lang); } catch (x) {} render(); return; }
+  if (t.dataset.o){ otype = t.dataset.o; render(); return; }
+  if (t.dataset.id){ document.getElementById("s-" + t.dataset.id).scrollIntoView({ behavior: "smooth", block: "start" }); document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b === t)); return; }
+  if (t.dataset.p){ cart[t.dataset.p] = (cart[t.dataset.p] || 0) + 1; render(); return; }
+  if (t.dataset.m){ cart[t.dataset.m] = Math.max(0, (cart[t.dataset.m] || 0) - 1); render(); return; }
+  if (t.id === "send"){ window.open(wa(buildOrder()), "_blank"); }
+});
+document.addEventListener("input", e => { if (e.target.id === "info") info = e.target.value; });
+
+const saved = (() => { try { return localStorage.getItem("menu-lang"); } catch (e) { return null; } })();
+if (saved && UI.foot[saved]) lang = saved;
+applyCover();
+render();
+</script>
+</body>
+</html>
